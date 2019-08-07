@@ -82,11 +82,9 @@ def stations():
 def tobs():
     last_date = session.query(Measurement.date).\
         order_by(Measurement.date.desc()).first()
-
-    yy = int(last_date[0][:4])
-    mm = int(last_date[0][5:7])
-    dd = int(last_date[0][-2:])
-    date_diff = dt.date(yy, mm, dd) - dt.timedelta(days = 365)
+        
+    date_format = dt.datetime.strptime(last_date[0], '%Y-%m-%d')
+    date_diff = date_format.date() - dt.timedelta(days = 365)
 
     temp_query = session.query(Measurement.date, Measurement.tobs).\
         filter(Measurement.date > date_diff).\
@@ -104,12 +102,11 @@ def tobs():
 # Calculating temperatures for dates between the input date and the latest observed date
 @app.route('/api/v1.0/<start>')
 def temps(start):
-    yy = int(start[:4])
-    mm = int(start[5:7])
-    dd = int(start[-2:])
-    date_diff = dt.date(yy, mm, dd) - dt.timedelta(days = 365)
+    start_date = dt.datetime.strptime(start, '%Y-%m-%d')
+    date_diff = start_date.date() - dt.timedelta(days = 365)
     
-    summary_query = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs),\
+    summary_query = session.query(func.min(Measurement.tobs),\
+        func.max(Measurement.tobs),\
         func.avg(Measurement.tobs)).\
         filter(Measurement.date > date_diff).all()
     
@@ -124,17 +121,12 @@ def temps(start):
 # Calculating temperatures for dates between the input dates
 @app.route('/api/v1.0/<start>/<end>')
 def temps2(start, end):
-    yy1 = int(start[:4])
-    mm1 = int(start[5:7])
-    dd1 = int(start[-2:])
-    start_date = dt.date(yy1, mm1, dd1)
-
-    yy2 = int(end[:4])
-    mm2 = int(end[5:7])
-    dd2 = int(end[-2:])
-    end_date = dt.date(yy2, mm2, dd2)
+    start_date = dt.datetime.strptime(start, '%Y-%m-%d')
+    end_date = dt.datetime.strptime(end, '%Y-%m-%d')
     
-    summary_query = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs)).\
+    summary_query = session.query(func.min(Measurement.tobs),\
+        func.max(Measurement.tobs),\
+        func.avg(Measurement.tobs)).\
         filter(Measurement.date.between(start_date, end_date)).all()
     
     summary = {
